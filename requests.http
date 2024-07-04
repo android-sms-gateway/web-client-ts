@@ -2,3 +2,19 @@
 
 ###
 GET {{baseUrl}} HTTP/1.1
+
+###
+POST {{baseUrl}}/api/webhooks?sessionId=XA0RyZ8HlVEuPPe5jBpQJ0f_7dZPwaz6 HTTP/1.1
+Content-Type: application/json
+
+{
+  "deviceId": "ffffffffceb0b1db0000018e937c815b",
+  "event": "sms:received",
+  "id": "Ey6ECgOkVVFjz3CL48B8C",
+  "payload": {
+    "message": "Android is always a sweet treat!",
+    "phoneNumber": "6505551212",
+    "receivedAt": "2024-06-22T15:46:11.000+07:00"
+  },
+  "webhookId": "web-client-ts"
+}
