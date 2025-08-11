@@ -21,7 +21,7 @@ export const http: HttpConfig = {
 }
 
 export const gateway: GatewayConfig = {
-    url: process.env.GATEWAY__URL || "https://sms.capcom.me/api/3rdparty/v1",
+    url: process.env.GATEWAY__URL || "https://api.sms-gate.app/3rdparty/v1",
     webhookUrl: process.env.GATEWAY__WEBHOOK_URL || `http://localhost:${httpPort}/api/webhooks`,
 }
 
