@@ -95,7 +95,7 @@ Create a `.env` file in the project root with the following environment variable
 | ---------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
 | `HTTP__PORT` or `PORT` | Server listening port                                     | `3000`                                                 |
 | `HTTP__SESSION_SECRET` | Session encryption secret                                 | random bytes (32 bytes)                                |
-| `GATEWAY__URL`         | SMS Gateway API URL                                       | `https://sms.capcom.me/api/3rdparty/v1`                |
+| `GATEWAY__URL`         | SMS Gateway API URL                                       | `https://api.sms-gate.app/3rdparty/v1`                 |
 | `GATEWAY__WEBHOOK_URL` | External address for webhooks (`<your-url>/api/webhooks`) | `http://localhost:<your-configured-port>/api/webhooks` |
 | `NODE_ENV`             | Application environment (development or production)       | `production`                                           |
 
