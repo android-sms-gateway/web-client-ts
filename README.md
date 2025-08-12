@@ -1,122 +1,178 @@
-# SMS Gateway for Android™ Web Client
+<!-- PROJECT SHIELDS -->
+[![License][license-shield]][license-url]
 
-## Description
+<a id="readme-top"></a>
 
-This is a demonstration app that utilizes the [SMS Gateway for Android™](https://sms.capcom.me/) to create an SMS management web interface. It leverages webhooks to display received SMS messages in real-time and provides the capability to send SMS messages.
+<div align="center">
+  <h1 align="center">SMS Gateway for Android™ (SMSGate) Web Client</h1>
+  <p align="center">
+    A demonstration app that utilizes the <a href="https://sms-gate.app/">SMS Gateway for Android</a> to create an SMS management web interface
+    <br />
+    <a href="https://github.com/android-sms-gateway/web-client-ts"><strong>Explore the source »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/android-sms-gateway/web-client-ts/issues/new?labels=bug">Report Bug</a>
+    ·
+    <a href="https://github.com/android-sms-gateway/web-client-ts/issues/new?labels=enhancement">Request Feature</a>
+  </p>
+</div>
 
-## Features
+<!-- TABLE OF CONTENTS -->
+- [🌐 About The Project](#-about-the-project)
+  - [Key Features](#key-features)
+  - [Built With](#built-with)
+- [🚀 Getting Started](#-getting-started)
+  - [📋 Prerequisites](#-prerequisites)
+  - [📦 Installation](#-installation)
+  - [⚙️ Configuration](#️-configuration)
+- [💻 Usage](#-usage)
+  - [Development Mode](#development-mode)
+  - [Production Build](#production-build)
+  - [Production Start](#production-start)
+- [⚙️ Technical Implementation](#️-technical-implementation)
+  - [Event Sequence](#event-sequence)
+  - [Client Events](#client-events)
+  - [Server Events](#server-events)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-- Connect to any account registered on the Cloud/Private server.
-- Real-time receipt of SMS messages.
-- Capability to send SMS messages.
 
-## Privacy
+<!-- ABOUT THE PROJECT -->
+## 🌐 About The Project
 
-The application does not store credentials anywhere, except in the session memory, which is cleared upon logout. Received and sent SMS messages are not stored at all for now.
+This web client serves as the frontend component of the SMS Gateway for Android ecosystem, providing a user-friendly interface for managing SMS communications through the SMS Gateway for Android app. It connects to both cloud and private server deployments, enabling real-time SMS management capabilities.
 
-## Getting Started
+### Key Features
 
-### Prerequisites
+- 🌐 Connect to any account registered on Cloud/Private server
+- 📩 Real-time receipt of SMS messages
+- 📤 Capability to send SMS messages
+- 🔒 Session-based authentication with no persistent credential storage
 
-- Node.js
-- npm or yarn
+The application follows strict privacy practices - credentials are stored only in session memory (cleared upon logout) and SMS messages are not stored persistently.
 
-### Installation
+### Built With
+
+- 🟩 [Node.js](https://nodejs.org/)
+- 📦 [npm/yarn](https://www.npmjs.com/)
+- ⚡ [Socket.IO](https://socket.io/)
+- 📘 [TypeScript](https://www.typescriptlang.org/)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- GETTING STARTED -->
+## 🚀 Getting Started
+
+### 📋 Prerequisites
+
+- Node.js (v18+)
+- npm or yarn package manager
+
+### 📦 Installation
 
 1. Clone the repository:
-    ```bash
-    git clone <repository-url>
-    ```
-2. Navigate into the project directory:
-    ```bash
-    cd web-client-ts
-    ```
+   ```bash
+   git clone https://github.com/android-sms-gateway/web-client-ts.git
+   ```
+2. Navigate to the web client directory:
+   ```bash
+   cd web-client-ts
+   ```
 3. Install dependencies:
-    ```bash
-    npm install
-    ```
-    or if you use yarn:
-    ```bash
-    yarn install
-    ```
+   ```bash
+   npm install
+   ```
+   or with yarn:
+   ```bash
+   yarn install
+   ```
 
-### Configuration
+### ⚙️ Configuration
 
-To configure the application, create a `.env` file in the project root directory. This file should contain your environment variables, which include:
+Create a `.env` file in the project root with the following environment variables (see [.env.example](.env.example) for a ready-to-copy template):
 
-- `HTTP__PORT` or `PORT`: Specifies the port on which the server listens.
-- `HTTP__SESSION_SECRET`: A secret key for session encryption.
-- `GATEWAY__URL`: The URL of the gateway API.
-- `GATEWAY__WEBHOOK_URL`: The external address of the server, appended with `/api/webhooks`, to receive webhooks.
-- `NODE_ENV`: Set to `development` to enable development mode.
+| Variable               | Description                                               | Default Value                                          |
+| ---------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
+| `HTTP__PORT` or `PORT` | Server listening port                                     | `3000`                                                 |
+| `HTTP__SESSION_SECRET` | Session encryption secret                                 | random bytes (32 bytes)                                |
+| `GATEWAY__URL`         | SMS Gateway API URL                                       | `https://sms.capcom.me/api/3rdparty/v1`                |
+| `GATEWAY__WEBHOOK_URL` | External address for webhooks (`<your-url>/api/webhooks`) | `http://localhost:<your-configured-port>/api/webhooks` |
+| `NODE_ENV`             | Application environment (development or production)       | `production`                                           |
 
-For more detailed information on the configuration options, please refer to `src/config.ts`.
+For complete configuration options, see [`src/config.ts`](src/config.ts).
 
-### Running the Project
+Notes:  
+- Do not commit your `.env` file to version control.
+- Always set a strong, unique `HTTP__SESSION_SECRET` in production (rotate it periodically). If not provided, the app may auto-generate one for development only.
 
-- To run in development mode:
-    ```bash
-    npm run dev
-    ```
-    or
-    ```bash
-    yarn dev
-    ```
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- To build the project:
-    ```bash
-    npm run build
-    ```
-    or
-    ```bash
-    yarn build
-    ```
+<!-- USAGE EXAMPLES -->
+## 💻 Usage
 
-- To start the server:
-    ```bash
-    npm start
-    ```
-    or
-    ```bash
-    yarn start
-    ```
+After starting the server, navigate to `http://localhost:<your-configured-port>` to access the web interface.
 
-## Usage
+### Development Mode
+```bash
+npm run dev
+```
 
-After starting the server, navigate to `http://localhost:<your-configured-port>` to view the application.
+### Production Build
+```bash
+npm run build
+```
 
-## Technical details
+### Production Start
+```bash
+npm start
+```
 
-This app uses socket.io for real-time communication.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Events sequence
+<!-- TECHNICAL IMPLEMENTATION -->
+## ⚙️ Technical Implementation
 
-Client always listens to events `login:success` and `login:fail`. The first one indicates that client successfully logged in by previously sending `login` event or saved in session credentials. The second one indicates that login attempt failed, current credentials can't be used anymore or session expired.
+The application uses Socket.IO for real-time communication between client and server. All communication follows a strict event-based protocol.
 
-Typical sequences:
+### Event Sequence
+1. Client sends `login` with credentials
+2. Server responds with `login:success` or `login:fail`
+3. Client sends `sms:send` to send messages
+4. Server sends `sms:received` for incoming messages
+5. Client sends `logout` to terminate session
 
-1. Client sends `login` event with credentials to login.
-2. Server responds with `login:success` or `login:fail` event.
-3. Client sends `sms:send` event with message to send new message. Server sends acknowledgement with success or failure.
-4. Server sends `sms:received` event with newly received message.
-5. Client sends `logout` event to destroy session.
+### Client Events
+- `login` - Authentication attempt
+- `sms:send` - Send SMS message
+- `logout` - Terminate session
 
-### Client emmited events
+### Server Events
+- `sms:received` - Incoming SMS notification
+- `login:success` - Successful authentication
+- `login:fail` - Authentication failure
 
-- `login` with `{login: string, password: string}` payload - login attempt. Server responds by `login:success` or `login:fail` event.
-- `sms:send` with `{phoneNumber: string, message: string}` payload - send SMS message. Server uses acknowledgement to respond with payload `{success: boolean, message?: string}`.
-- `logout` - destroy session, server responds by `login:fail` event.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Server emmited events
+<!-- CONTRIBUTING -->
+## 🤝 Contributing
 
-- `sms:received` with `{phoneNumber: string, message: string, receivedAt: Date}` payload - received SMS message. The client should add received message to the list.
-- `login:success` - login successful. The client should move from login screen to messaging screen.
-- `login:fail` - login failed. The client should move to login screen if it is not already there.
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-## Contributing
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Contributions are welcome! Please feel free to submit a pull request.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## License
+<!-- LICENSE -->
+## 📄 License
 
-This project is licensed under the Apache-2.0 License - see the `LICENSE` file for details.
+Distributed under the Apache-2.0 License. See [`LICENSE`](LICENSE) for more information.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- MARKDOWN LINKS & IMAGES -->
+[license-shield]: https://img.shields.io/github/license/android-sms-gateway/web-client-ts.svg?style=for-the-badge
+[license-url]: LICENSE
