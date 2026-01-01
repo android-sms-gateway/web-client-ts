@@ -25,7 +25,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "express-session": "^1.18.2",
     "morgan": "^1.10.1",
     "socket.io": "^4.7.5"
