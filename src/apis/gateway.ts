@@ -34,7 +34,7 @@ export class GatewayApi {
         });
     }
 
-    async sendMessage(phoneNumber: string, message: string) {
+    async sendMessage(phoneNumber: string, message: string, simNumber: number = 1) {
         await this.fetch("message", {
             method: "POST",
             body: JSON.stringify({
@@ -42,6 +42,18 @@ export class GatewayApi {
                     phoneNumber,
                 ],
                 message,
+                simNumber,
+            }),
+        });
+    }
+
+    async sendMessageToMultiple(phoneNumbers: string[], message: string, simNumber: number = 1) {
+        await this.fetch("message", {
+            method: "POST",
+            body: JSON.stringify({
+                phoneNumbers,
+                message,
+                simNumber,
             }),
         });
     }
