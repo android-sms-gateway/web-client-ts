@@ -45,13 +45,22 @@ const subscribe = (callback: (event: MessageEvent) => void) => {
     events.on("message", callback);
 }
 
-const send = async (sessionId: string, phoneNumber: string, message: string) => {
+const send = async (sessionId: string, phoneNumber: string, message: string, simNumber: number = 1) => {
     const api = sessions[sessionId];
     if (!api) {
         throw new Error(`Session ${sessionId} not found`);
     }
 
-    await api.sendMessage(phoneNumber, message);
+    await api.sendMessage(phoneNumber, message, simNumber);
+}
+
+const sendBulk = async (sessionId: string, phoneNumbers: string[], message: string, simNumber: number = 1) => {
+    const api = sessions[sessionId];
+    if (!api) {
+        throw new Error(`Session ${sessionId} not found`);
+    }
+
+    await api.sendMessageToMultiple(phoneNumbers, message, simNumber);
 }
 
 const logout = async (sessionId: string) => {
@@ -62,4 +71,4 @@ const logout = async (sessionId: string) => {
     delete sessions[sessionId];
 }
 
-export const GatewayService = { login, logout, send, subscribe, processWebhook }
+export const GatewayService = { login, logout, send, sendBulk, subscribe, processWebhook }

@@ -21,6 +21,62 @@
             overflow-y: scroll;
             border: 1px solid #ccc;
         }
+
+        .manager-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        #csvPreview {
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .csv-row {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .csv-row:last-child {
+            border-bottom: none;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab-button {
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-button.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 
@@ -49,18 +105,67 @@
         </div>
 
         <div id="managerView">
+            <div class="manager-toolbar mb-3">
+                <h5 class="mb-0">Messages</h5>
+                <button type="button" id="logoutButton" class="btn btn-outline-danger btn-sm">Logout</button>
+            </div>
+
+            <div class="form-group">
+                <label for="simNumber">SIM Card</label>
+                <select class="form-control" id="simNumber" name="simNumber">
+                    <option value="1" selected>SIM 1</option>
+                    <option value="2">SIM 2</option>
+                </select>
+                <small class="form-text text-muted">Choose which SIM card to use for outgoing SMS.</small>
+            </div>
+
             <div id="messages" class="mb-3"></div>
-            <form id="sendMessageForm">
-                <div class="form-group">
-                    <label for="phoneNumber">Phone Number</label>
-                    <input type="text" class="form-control" id="phoneNumber" name="phoneNumber">
+
+            <div class="tab-buttons">
+                <button type="button" class="tab-button active" data-tab="single">Single Send</button>
+                <button type="button" class="tab-button" data-tab="bulk">Bulk Send (CSV)</button>
+            </div>
+
+            <div id="single" class="tab-content active">
+                <form id="sendMessageForm">
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number</label>
+                        <input type="text" class="form-control" id="phoneNumber" name="phoneNumber">
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <input type="text" class="form-control" id="message" name="message">
+                    </div>
+                    <button type="submit" class="btn btn-success">Send</button>
+                </form>
+            </div>
+
+            <div id="bulk" class="tab-content">
+                <form id="csvForm">
+                    <div class="form-group">
+                        <label for="csvFile">Upload CSV File</label>
+                        <input type="file" class="form-control-file" id="csvFile" accept=".csv" />
+                        <small class="form-text text-muted">CSV should have columns: phoneNumber (required), message
+                            (optional). If message column is not present, the message below will be used for all
+                            numbers.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="bulkMessage">Default Message (used if CSV has no message column)</label>
+                        <input type="text" class="form-control" id="bulkMessage" name="bulkMessage">
+                    </div>
+                </form>
+
+                <div id="csvPreview" class="mb-3">
+                    <div
+                        style="padding: 8px; background-color: #f8f9fa; font-weight: bold; border-bottom: 1px solid #ddd;">
+                        Preview
+                    </div>
+                    <div id="csvPreviewContent"></div>
                 </div>
-                <div class="form-group">
-                    <label for="message">Message</label>
-                    <input type="text" class="form-control" id="message" name="message">
-                </div>
-                <button type="submit" class="btn btn-success">Send</button>
-            </form>
+
+                <button type="button" id="sendCsvButton" class="btn btn-success" disabled>Send to All</button>
+                <button type="button" id="clearCsvButton" class="btn btn-secondary">Clear</button>
+            </div>
         </div>
     </div>
 
@@ -76,13 +181,258 @@
             const socket = io(); // Connect to server
             const loginForm = document.getElementById('loginForm');
             const sendMessageForm = document.getElementById('sendMessageForm');
+            const logoutButton = document.getElementById('logoutButton');
+            const simNumberSelect = document.getElementById('simNumber');
             const loginView = document.getElementById('loginView');
             const managerView = document.getElementById('managerView');
             const loginError = document.getElementById('loginError');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const messagesDiv = document.getElementById('messages');
 
+            // Tab elements
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // CSV elements
+            const csvFile = document.getElementById('csvFile');
+            const bulkMessage = document.getElementById('bulkMessage');
+            const sendCsvButton = document.getElementById('sendCsvButton');
+            const clearCsvButton = document.getElementById('clearCsvButton');
+            const csvPreview = document.getElementById('csvPreview');
+            const csvPreviewContent = document.getElementById('csvPreviewContent');
+
+            let parsedCsvData = [];
+
             const excludingViews = [loginView, managerView, loadingIndicator, loginError];
+
+            // Tab switching
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const tabName = this.getAttribute('data-tab');
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    this.classList.add('active');
+                    document.getElementById(tabName).classList.add('active');
+                });
+            });
+
+            // CSV parsing
+            csvFile.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    try {
+                        const csv = event.target.result;
+                        parsedCsvData = parseCSV(csv);
+
+                        if (parsedCsvData.length === 0) {
+                            alert('No valid phone numbers found in CSV');
+                            csvPreview.style.display = 'none';
+                            sendCsvButton.disabled = true;
+                            return;
+                        }
+
+                        displayCSVPreview(parsedCsvData);
+                        csvPreview.style.display = 'block';
+                        sendCsvButton.disabled = false;
+                    } catch (error) {
+                        alert('Error parsing CSV: ' + error.message);
+                        csvPreview.style.display = 'none';
+                        sendCsvButton.disabled = true;
+                    }
+                };
+                reader.readAsText(file);
+            });
+
+            // Parse CSV
+            function parseCSV(csvText) {
+                function parseLine(line) {
+                    const result = [];
+                    let current = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < line.length; i++) {
+                        const ch = line[i];
+                        if (inQuotes) {
+                            if (ch === '"') {
+                                if (i + 1 < line.length && line[i + 1] === '"') {
+                                    current += '"';
+                                    i++;
+                                } else {
+                                    inQuotes = false;
+                                }
+                            } else {
+                                current += ch;
+                            }
+                        } else {
+                            if (ch === '"') {
+                                inQuotes = true;
+                            } else if (ch === ',') {
+                                result.push(current);
+                                current = '';
+                            } else {
+                                current += ch;
+                            }
+                        }
+                    }
+                    result.push(current);
+                    return result;
+                }
+
+                // Split into lines, respecting quoted newlines
+                const lines = [];
+                let cur = '';
+                let inQuotes = false;
+                for (let i = 0; i < csvText.length; i++) {
+                    const ch = csvText[i];
+                    if (ch === '"') {
+                        inQuotes = !inQuotes;
+                        cur += ch;
+                    } else if (ch === '\n' && !inQuotes) {
+                        lines.push(cur);
+                        cur = '';
+                    } else {
+                        cur += ch;
+                    }
+                }
+                if (cur) lines.push(cur);
+
+                if (lines.length === 0) return [];
+
+                const headers = parseLine(lines[0]).map(h => h.trim().toLowerCase());
+                const phoneIndex = headers.findIndex(h => h === 'phonenumber' || h === 'phone');
+                const messageIndex = headers.findIndex(h => h === 'message');
+
+                if (phoneIndex === -1) {
+                    throw new Error('CSV must have a "phoneNumber" or "phone" column');
+                }
+
+                const data = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const values = parseLine(line).map(v => v.trim());
+                    const phoneNumber = values[phoneIndex];
+                    const message = messageIndex !== -1 ? values[messageIndex] : null;
+
+                    if (phoneNumber) {
+                        data.push({ phoneNumber, message });
+                    }
+                }
+
+                return data;
+            }
+
+            // Display CSV preview
+            function displayCSVPreview(data) {
+                csvPreviewContent.innerHTML = '';
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    const div = document.createElement('div');
+                    div.className = 'csv-row';
+                    const strong = document.createElement('strong');
+                    strong.textContent = (i + 1) + '. ';
+                    div.appendChild(strong);
+                    let text = row.phoneNumber;
+                    if (row.message) {
+                        text += ' - ' + row.message;
+                    }
+                    div.appendChild(document.createTextNode(text));
+                    csvPreviewContent.appendChild(div);
+                }
+            }
+
+            // Clear CSV
+            clearCsvButton.addEventListener('click', function () {
+                csvFile.value = '';
+                parsedCsvData = [];
+                csvPreview.style.display = 'none';
+                sendCsvButton.disabled = true;
+                csvPreviewContent.innerHTML = '';
+            });
+
+            // Send CSV
+            sendCsvButton.addEventListener('click', function () {
+                if (parsedCsvData.length === 0) {
+                    alert('No phone numbers to send to');
+                    return;
+                }
+
+                const defaultMessage = bulkMessage.value;
+                const phoneNumbers = parsedCsvData.map(row => row.phoneNumber);
+                const simNumber = Number(simNumberSelect.value) || 1;
+
+                // Use individual messages if available, otherwise use default message
+                const hasIndividualMessages = parsedCsvData.some(row => row.message);
+
+                if (hasIndividualMessages) {
+                    // Send individual messages
+                    showView(loadingIndicator);
+                    let completed = 0;
+                    let failed = 0;
+
+                    parsedCsvData.forEach(row => {
+                        const message = row.message || defaultMessage;
+                        if (!message) {
+                            completed++;
+                            failed++;
+                            if (completed === parsedCsvData.length) {
+                                showView(managerView);
+                                alert('Sent ' + (completed - failed) + ' messages, failed ' + failed);
+                                clearCsvButton.click();
+                            }
+                            return;
+                        }
+
+                        socket.emit(
+                            'sms:send',
+                            { phoneNumber: row.phoneNumber, message: message, simNumber: simNumber },
+                            function (data) {
+                                completed++;
+                                if (!data.success) {
+                                    failed++;
+                                    console.error('Failed to send to ' + row.phoneNumber + ': ' + data.message);
+                                }
+
+                                if (completed === parsedCsvData.length) {
+                                    showView(managerView);
+                                    if (failed === 0) {
+                                        alert('All messages sent successfully!');
+                                    } else {
+                                        alert('Sent ' + (completed - failed) + ' messages, failed ' + failed);
+                                    }
+                                    clearCsvButton.click();
+                                }
+                            }
+                        );
+                    });
+                } else {
+                    // Send same message to all
+                    if (!defaultMessage) {
+                        alert('Please enter a message');
+                        return;
+                    }
+
+                    showView(loadingIndicator);
+                    socket.emit(
+                        'sms:send:bulk',
+                        { phoneNumbers: phoneNumbers, message: defaultMessage, simNumber: simNumber },
+                        function (data) {
+                            showView(managerView);
+                            if (data.success) {
+                                alert('Messages sent to ' + phoneNumbers.length + ' recipients!');
+                                clearCsvButton.click();
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
+                        }
+                    );
+                }
+            });
 
             loginForm.addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -96,10 +446,12 @@
                 e.preventDefault();
 
                 const formData = new FormData(sendMessageForm);
+                const payload = Object.fromEntries(formData);
+                payload.simNumber = Number(simNumberSelect.value) || 1;
 
                 socket.emit(
                     'sms:send',
-                    Object.fromEntries(formData),
+                    payload,
                     function (data) {
                         if (!data.success) {
                             alert(data.message);
@@ -110,13 +462,26 @@
                 document.getElementById('message').value = ''; // Clear input after send
             });
 
+            logoutButton.addEventListener('click', function () {
+                showView(loadingIndicator);
+                socket.emit('logout');
+            });
+
             socket.on('login:success', function () {
+                loginForm.reset();
                 showView(managerView);
             });
 
             socket.on('login:fail', function () {
                 showView(loginView);
                 $(loginError).show();
+            });
+
+            socket.on('logout:success', function () {
+                loginForm.reset();
+                sendMessageForm.reset();
+                messagesDiv.innerHTML = '';
+                showView(loginView);
             });
 
             socket.on('sms:received', function (data) {

@@ -15,7 +15,7 @@ export const register = (io: Server) => {
 
         socket.use((data, next) => {
             console.debug(data);
-            req.session.reload((err: any) => {
+            req.session?.reload((err: any) => {
                 if (err) {
                     console.error(err);
                     socket.disconnect();
@@ -44,7 +44,7 @@ export const register = (io: Server) => {
 
         socket.on('sms:send', async (data, callback) => {
             try {
-                await GatewayService.send(req.session.id, data.phoneNumber, data.message);
+                await GatewayService.send(req.session.id, data.phoneNumber, data.message, Number(data.simNumber) || 1);
                 callback({ success: true });
             } catch (error: Error | any) {
                 callback({ success: false, message: error.message });
@@ -55,19 +55,36 @@ export const register = (io: Server) => {
             }
         });
 
+        socket.on('sms:send:bulk', async (data, callback) => {
+            try {
+                await GatewayService.sendBulk(req.session.id, data.phoneNumbers, data.message, Number(data.simNumber) || 1);
+                callback({ success: true });
+            } catch (error: Error | any) {
+                callback({ success: false, message: error.message });
+                if (error instanceof UnauthorizedError) {
+                    socket.emit('login:fail', { message: error.message });
+                }
+            }
+        });
         socket.on('logout', async () => {
             try {
                 await GatewayService.logout(req.session.id);
 
-                req.session.destroy((err) => {
-                    if (err) {
-                        console.error(err);
-                    }
+                await new Promise<void>((resolve, reject) => {
+                    req.session.destroy((err) => {
+                        if (err) {
+                            console.error(err);
+                            reject(err);
+                        } else {
+                            resolve();
+                        }
+                    });
                 });
+
+                socket.emit('logout:success');
             } catch (e) {
                 console.error(e);
             }
-            socket.emit('login:fail');
         });
 
         console.log(`user connected: ${req.session.id}`);

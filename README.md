@@ -33,6 +33,7 @@
   - [Event Sequence](#event-sequence)
   - [Client Events](#client-events)
   - [Server Events](#server-events)
+  - [CSV Bulk Send](#csv-bulk-send)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
@@ -137,19 +138,30 @@ The application uses Socket.IO for real-time communication between client and se
 ### Event Sequence
 1. Client sends `login` with credentials
 2. Server responds with `login:success` or `login:fail`
-3. Client sends `sms:send` to send messages
-4. Server sends `sms:received` for incoming messages
-5. Client sends `logout` to terminate session
+3. Client sends `sms:send` to send a message to a single recipient
+4. Client sends `sms:send:bulk` to send a message to multiple recipients (CSV bulk send)
+5. Server sends `sms:received` for incoming messages
+6. Client sends `logout` to terminate session
+7. Server responds with `logout:success`
 
 ### Client Events
 - `login` - Authentication attempt
-- `sms:send` - Send SMS message
+- `sms:send` - Send SMS message to single recipient
+- `sms:send:bulk` - Send SMS message to multiple recipients
 - `logout` - Terminate session
 
 ### Server Events
 - `sms:received` - Incoming SMS notification
 - `login:success` - Successful authentication
 - `login:fail` - Authentication failure
+- `logout:success` - Successful logout
+
+### CSV Bulk Send
+The application supports sending messages to multiple recipients via CSV upload:
+- Upload a CSV file with columns: `phoneNumber` (required) and `message` (optional)
+- If the `message` column is not present, a default message is used for all recipients
+- Messages are sent individually if per-recipient messages are provided
+- All phone numbers receive the same default message if no message column is present
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
