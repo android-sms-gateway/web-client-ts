@@ -80,7 +80,7 @@ export class GatewayApi {
 ///////////////////////////////////////////////////////////////////////////////
 export class UnauthorizedError extends Error { }
 
-export type WebHookEventType = 'sms:received' | 'system:ping';
+export type WebHookEventType = 'sms:received' | 'system:ping' | 'mms:received' | 'mms:downloaded';
 
 export type WebHookPayloadSmsReceived = {
     message: string,
