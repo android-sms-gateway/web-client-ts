@@ -92,13 +92,19 @@ The application follows strict privacy practices - credentials are stored only i
 
 Create a `.env` file in the project root with the following environment variables (see [.env.example](.env.example) for a ready-to-copy template):
 
-| Variable               | Description                                               | Default Value                                          |
-| ---------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
-| `HTTP__PORT` or `PORT` | Server listening port                                     | `3000`                                                 |
-| `HTTP__SESSION_SECRET` | Session encryption secret                                 | random bytes (32 bytes)                                |
-| `GATEWAY__URL`         | SMS Gateway API URL                                       | `https://api.sms-gate.app/3rdparty/v1`                 |
-| `GATEWAY__WEBHOOK_URL` | External address for webhooks (`<your-url>/api/webhooks`) | `http://localhost:<your-configured-port>/api/webhooks` |
-| `NODE_ENV`             | Application environment (development or production)       | `production`                                           |
+| Variable               | Description                                               | Default Value                              |
+| ---------------------- | --------------------------------------------------------- | ------------------------------------------ |
+| `HTTP__PORT` or `PORT` | Server listening port                                     | `3000`                                     |
+| `HTTP__SESSION_SECRET` | Session encryption secret                                 | random bytes (32 bytes)                    |
+| `GATEWAY__URL`         | SMS Gateway API URL                                       | `https://api.sms-gate.app/3rdparty/v1`     |
+| `GATEWAY__WEBHOOK_URL` | External address for webhooks (`<your-url>/api/webhooks`) | **required** (no default)                  |
+| `NODE_ENV`             | Application environment (development or production)       | `production`                               |
+
+**`GATEWAY__WEBHOOK_URL`** is required. The server will refuse to start without it.
+
+- In production, the URL **must** use HTTPS (e.g. `https://your-domain.com/api/webhooks`).
+- HTTP is only allowed when `NODE_ENV=development` (for local testing with `http://localhost:...`).
+- The port in the webhook URL should match your `HTTP__PORT` value.
 
 For complete configuration options, see [`src/config.ts`](src/config.ts).
 
